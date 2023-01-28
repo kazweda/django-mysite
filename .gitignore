@@ -1,2 +1,5 @@
 *.code-workspace
-
+db.sqlite3
+*.log
+*.pyc
+__pycache__/
