@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.utils import timezone
 from django.urls import reverse
 
-from .models import Question
+from .models import Question, Choice
 
 
 class QuestionModelTests(TestCase):
@@ -38,14 +38,16 @@ class QuestionModelTests(TestCase):
 
 
 def create_question(question_text, days):
-    """
-    Create a question with the given `question_text` and published the
-    given number of `days` offset to now (negative for questions published
-    in the past, positive for questions that have yet to be published).
-    """
     time = timezone.now() + datetime.timedelta(days=days)
     return Question.objects.create(question_text=question_text, pub_date=time)
 
+def create_choice(question, choice_text):
+    return Choice.objects.create(
+        question=question, 
+        choice_text=choice_text,
+        votes=1,
+        visible=True
+    )
 
 class QuestionIndexViewTests(TestCase):
     def test_no_questions(self):
@@ -116,11 +118,14 @@ class QuestionDetailViewTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_past_question(self):
-        """
-        The detail view of a question with a pub_date in the past
-        displays the question's text.
-        """
         past_question = create_question(question_text='Past Question.', days=-5)
         url = reverse('polls:detail', args=(past_question.id,))
         response = self.client.get(url)
         self.assertContains(response, past_question.question_text)
+        
+    def test_question_choice_visible(self):
+        question = create_question(question_text='Past Question.', days=-5)
+        choice = create_choice(question, choice_text='my choice')
+        url = reverse('polls:detail', args=(question.id,))
+        response = self.client.get(url)
+        self.assertContains(response, choice.choice_text)
